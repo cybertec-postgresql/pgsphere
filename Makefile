@@ -20,11 +20,6 @@ OBJS      += src/healpix.o src/moc.o src/process_moc.o \
 endif
 
 DATA_built  = $(RELEASE_SQL) \
-			  pg_sphere--1.0--1.0_gavo.sql \
-			  pg_sphere--1.0_gavo--1.1.5beta0gavo.sql \
-			  pg_sphere--1.1.5beta0gavo--1.1.5beta2gavo.sql \
-			  pg_sphere--1.1.5beta2gavo--1.1.5beta4gavo.sql \
-			  pg_sphere--1.1.5beta4gavo--1.2.0.sql \
 			  pg_sphere--1.2.0--1.2.1.sql \
 			  pg_sphere--1.2.1--1.2.2.sql \
 			  pg_sphere--1.2.2--1.2.3.sql \
@@ -115,55 +110,13 @@ pg_sphere.test.sql: $(RELEASE_SQL) $(shlib)
 $(RELEASE_SQL): pg_sphere_head.sql.in $(addsuffix .in, $(PGS_SQL))
 	cat $^ > $@
 
-# default 1.0 (after 2016-02-07) -> 1.1.5
-UPGRADE_1_0_PRE_xxxxxx = contains-ops-fixes-2.sql
-# '1.1.5_from_2015-08-31'
-AUGMENT_1_0_PRE_AAF2D5 = pgs_contains_ops.sql gnomo.sql
-UPGRADE_1_0_PRE_AAF2D5 = contains-ops-fixes-1.sql pgs_gist_drop_spoint2.sql.in \
-						pgs_gist_contains_ops.sql
-
-# add new HEALPix functions and experimental spoint3
 ifneq ($(USE_HEALPIX),0)
-AUGMENT_FROM_GAVO = healpix.sql
-endif
-AUGMENT_FROM_GAVO += pgs_gist_spoint3.sql
-
-AUGMENT_1_0_115B0G = $(AUGMENT_FROM_GAVO)
-UPGRADE_1_0_115B0G = contains-ops-fixes-2.sql pgs_gist_drop_spoint2.sql
-
-# test installation B (generic)
-pg_sphere--1.0--1.0_gavo.sql: # dummy upgrade to allow for descriptive names
-	cat upgrade_scripts/$@.in > $@
-pg_sphere--1.0_gavo--1.1.5beta0gavo.sql: $(addsuffix .in, \
-		$(AUGMENT_1_0_115B0G) \
-		$(addprefix upgrade_scripts/, $(UPGRADE_1_0_115B0G)))
-	cat upgrade_scripts/$@.in $^ > $@
-
-ifneq ($(USE_HEALPIX),0)
-pg_sphere--1.1.5beta0gavo--1.1.5beta2gavo.sql: pgs_moc_type.sql.in
-	cat upgrade_scripts/$@.in $^ > $@
-
-pg_sphere--1.1.5beta2gavo--1.1.5beta4gavo.sql: pgs_moc_compat.sql.in
-	cat upgrade_scripts/$@.in $^ > $@
-
-pg_sphere--1.1.5beta4gavo--1.2.0.sql: pgs_moc_ops.sql.in
-	cat upgrade_scripts/$@.in $^ > $@
-
 pg_sphere--1.2.0--1.2.1.sql: pgs_moc_geo_casts.sql.in pgs_epochprop.sql.in
 	cat upgrade_scripts/$@.in $^ > $@
 
 pg_sphere--1.2.1--1.2.2.sql: upgrade_scripts/pg_sphere--1.2.1--1.2.2-healpix.sql.in
 	cat upgrade_scripts/$@.in $^ > $@
 else
-pg_sphere--1.1.5beta0gavo--1.1.5beta2gavo.sql:
-	cat upgrade_scripts/$@.in > $@
-
-pg_sphere--1.1.5beta2gavo--1.1.5beta4gavo.sql:
-	cat upgrade_scripts/$@.in > $@
-
-pg_sphere--1.1.5beta4gavo--1.2.0.sql:
-	cat upgrade_scripts/$@.in > $@
-
 pg_sphere--1.2.0--1.2.1.sql: pgs_epochprop.sql.in
 	cat upgrade_scripts/$@.in $^ > $@
 
