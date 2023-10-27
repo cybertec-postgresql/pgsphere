@@ -1015,6 +1015,48 @@ moc_disc(void* moc_in_context, int order, double theta, double phi, double radiu
 	PGS_CATCH
 }
 
+/*
+ * Return list of healpix intervals that a given disc is covering without going
+ * through building an smoc for it.
+ */
+bool
+healpix_disc_internal(int order, double theta, double phi, double radius,
+			 int *nranges, hpint64 **first, hpint64 **last)
+{
+	try {
+		rangeset<int64> pixset;
+		Healpix_Base2 hp(order, NEST);
+		pointing center(conv_theta(theta), phi);
+
+		hp.query_disc_inclusive(center, radius, pixset);
+
+		*nranges = pixset.nranges();
+		hpint64 *fi = (hpint64 *)malloc(*nranges * sizeof(hpint64));
+		if (! *fi)
+			return false;
+		hpint64 *la = (hpint64 *)malloc(*nranges * sizeof(hpint64));
+		if (! *la)
+		{
+			free(fi);
+			return false;
+		}
+
+		for (tsize j = 0; j < pixset.nranges(); j++)
+		{
+			fi[j] = pixset.ivbegin(j);
+			la[j] = pixset.ivend(j);
+		}
+
+		*first = fi;
+		*last = la;
+	}
+	catch (...)
+	{
+		return false;
+	}
+	return true;
+}
+
 void
 moc_polygon(void* moc_in_context, int order, int32 npts, float8 *polygon,
 												pgs_error_handler error_out)

@@ -94,6 +94,8 @@ Datum smoc_spoint(PG_FUNCTION_ARGS);
 Datum smoc_disc(PG_FUNCTION_ARGS);
 Datum smoc_scircle(PG_FUNCTION_ARGS);
 Datum smoc_spoly(PG_FUNCTION_ARGS);
+Datum smoc_pixels(PG_FUNCTION_ARGS);
+Datum healpix_disc(PG_FUNCTION_ARGS);
 
 Datum smoc_gin_extract_value(PG_FUNCTION_ARGS);
 Datum smoc_gin_extract_value_fine(PG_FUNCTION_ARGS);

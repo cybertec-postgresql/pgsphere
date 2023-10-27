@@ -161,6 +161,9 @@ void
 moc_disc(void* moc_in_context, int order, double theta, double phi, double radius,
 												pgs_error_handler error_out);
 
+bool
+healpix_disc_internal(int order, double theta, double phi, double radius, int *nranges, hpint64 **first, hpint64 **last);
+
 void
 moc_polygon(void* moc_in_context, int order, int32 npts, float8* polygon,
 												pgs_error_handler error_out);

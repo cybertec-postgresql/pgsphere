@@ -1,0 +1,17 @@
+-- PG12+ has support functions
+
+CREATE FUNCTION smoc_pixels ("order" int, smoc)
+        RETURNS bigint[]
+        AS 'MODULE_PATHNAME', 'smoc_pixels'
+        LANGUAGE 'c';
+
+CREATE FUNCTION healpix_dwithin_supportfn (internal)
+        RETURNS internal
+        AS 'MODULE_PATHNAME', 'healpix_dwithin_supportfn'
+        LANGUAGE 'c';
+
+COMMENT ON FUNCTION healpix_dwithin_supportfn(internal) IS
+   'support function for healpix_dwithin';
+
+ALTER FUNCTION healpix_dwithin(int, bigint, bigint, float8)
+   SUPPORT healpix_dwithin_supportfn;

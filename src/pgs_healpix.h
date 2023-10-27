@@ -26,6 +26,7 @@ Datum pg_nside2npix(PG_FUNCTION_ARGS);
 Datum pg_npix2nside(PG_FUNCTION_ARGS);
 Datum healpix_nest(PG_FUNCTION_ARGS);
 Datum healpix_ring(PG_FUNCTION_ARGS);
+void inv_healpix_nest_c(int32 order, hpint64 i, SPoint *p);
 Datum inv_healpix_nest(PG_FUNCTION_ARGS);
 Datum inv_healpix_ring(PG_FUNCTION_ARGS);
 

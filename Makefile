@@ -16,7 +16,7 @@ OBJS       = src/sscan.o src/sparse.o src/sbuffer.o src/vector3d.o src/point.o \
 
 ifneq ($(USE_HEALPIX),0)
 OBJS      += src/healpix.o src/moc.o src/process_moc.o \
-             healpix_bare/healpix_bare.o
+             healpix_bare/healpix_bare.o src/btree_support.o
 endif
 
 DATA_built  = $(RELEASE_SQL) \
@@ -55,7 +55,8 @@ CRUSH_TESTS = init_extended circle_extended
 PGS_SQL     = pgs_types.sql pgs_point.sql pgs_euler.sql pgs_circle.sql \
               pgs_line.sql pgs_ellipse.sql pgs_polygon.sql pgs_path.sql \
               pgs_box.sql pgs_contains_ops.sql pgs_contains_ops_compat.sql \
-              pgs_gist.sql gnomo.sql pgs_brin.sql pgs_circle_sel.sql
+              pgs_gist.sql gnomo.sql pgs_brin.sql pgs_circle_sel.sql \
+              pgs_healpix_btree.sql
 
 ifneq ($(USE_HEALPIX),0)
 TESTS      += healpix moc moc1 moc100 mocautocast
@@ -110,6 +111,11 @@ TESTS      += gist_support
 endif
 
 ifneq ($(USE_HEALPIX),0)
+ifeq ($(has_support_functions),y)
+PGS_SQL    += pgs_btree_support.sql
+TESTS      += btree_support
+endif
+
 ifeq ($(has_index_options),y)
 PGS_SQL    += pgs_moc_options.sql
 TESTS      += moc_options

@@ -40,6 +40,8 @@ PG_FUNCTION_INFO_V1(smoc_spoint);
 PG_FUNCTION_INFO_V1(smoc_disc);
 PG_FUNCTION_INFO_V1(smoc_scircle);
 PG_FUNCTION_INFO_V1(smoc_spoly);
+PG_FUNCTION_INFO_V1(smoc_pixels);
+PG_FUNCTION_INFO_V1(healpix_disc);
 
 PG_FUNCTION_INFO_V1(smoc_gin_extract_value);
 PG_FUNCTION_INFO_V1(smoc_gin_extract_value_fine);
@@ -1049,6 +1051,98 @@ smoc_spoly(PG_FUNCTION_ARGS)
 
 	create_moc_release_context(moc_in_context, moc_ret, moc_error_out);
 	PG_RETURN_POINTER(moc_ret);
+}
+
+Datum
+smoc_pixels(PG_FUNCTION_ARGS)
+{
+	int		order = PG_GETARG_INT32(0);
+	Smoc*	moc_a = (Smoc *) PG_DETOAST_DATUM(PG_GETARG_DATUM(1));
+	int		moc_a_end = VARSIZE(moc_a) - VARHDRSZ;
+	char*	moc_a_base = MOC_BASE(moc_a);
+
+	int		nelems = 0;
+	int		nalloc = 4;
+	Datum*	elems = palloc(nalloc * sizeof(Datum));
+	hpint64	last_pixel = -1;
+	ArrayType*	arr;
+
+	check_order(order);
+
+	for (int j = moc_a->data_begin; j < moc_a_end; j += MOC_INTERVAL_SIZE) // iterate over both in parallel
+	{
+		hpint64	first, last;
+		moc_interval *x;
+		// page bumps
+		int mod = (j + MOC_INTERVAL_SIZE) % PG_TOAST_PAGE_FRAGMENT;
+		if (mod > 0 && mod < MOC_INTERVAL_SIZE)
+			j += MOC_INTERVAL_SIZE - mod;
+		x = MOC_INTERVAL(moc_a_base, j);
+
+		first = c_healpix_convert_nest(x->first, HEALPIX_MAX_ORDER, order);
+		last = c_healpix_convert_nest(x->second - 1, HEALPIX_MAX_ORDER, order);
+
+		for (hpint64 i = first; i <= last; i++) /* interval RHS is included */
+		{
+			/* check if we already added the pixel (can happen because with order < 29) */
+			if (i == last_pixel)
+				continue;
+
+			if (nelems >= nalloc)
+			{
+				nalloc *= 2;
+				elems = repalloc(elems, nalloc * sizeof(Datum));
+			}
+			elems[nelems++] = Int64GetDatum(i);
+			last_pixel = i;
+		}
+	}
+
+	arr = construct_array_builtin(elems, nelems, INT8OID);
+
+	PG_RETURN_ARRAYTYPE_P(arr);
+}
+
+Datum
+healpix_disc(PG_FUNCTION_ARGS)
+{
+	int		order = PG_GETARG_INT32(0);
+	hpint64 center = PG_GETARG_INT64(1);
+	double	radius = PG_GETARG_FLOAT8(2);
+
+	SPoint	point;
+	int		nranges;
+	hpint64 *first, *last;
+	int		nelems = 0;
+	int		nalloc = 4;
+	Datum*	elems = palloc(nalloc * sizeof(Datum));
+	ArrayType*	arr;
+
+	check_order(order);
+
+	inv_healpix_nest_c(order, center, &point);
+
+	if (!healpix_disc_internal(order, point.lng, point.lat, radius, &nranges, &first, &last))
+		ereport(ERROR, (errcode(ERRCODE_INTERNAL_ERROR),
+				errmsg("failed to get healpix intervals for disc")));
+
+	for (int j = 0; j < nranges; j++)
+		for (hpint64 i = first[j]; i < last[j]; i++) /* interval RHS is not included */
+		{
+			if (nelems >= nalloc)
+			{
+				nalloc *= 2;
+				elems = repalloc(elems, nalloc * sizeof(Datum));
+			}
+			elems[nelems++] = Int64GetDatum(i);
+		}
+
+	free(first); /* allocated with malloc() */
+	free(last);
+
+	arr = construct_array_builtin(elems, nelems, INT8OID);
+
+	PG_RETURN_ARRAYTYPE_P(arr);
 }
 
 /* GIN index ***********************************/

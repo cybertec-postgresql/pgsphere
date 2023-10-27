@@ -1,0 +1,21 @@
+CREATE FUNCTION healpix_dwithin("order" int, bigint, bigint, radius float8)
+   RETURNS boolean
+   AS 'MODULE_PATHNAME', 'healpix_dwithin'
+   LANGUAGE C
+   IMMUTABLE STRICT PARALLEL SAFE;
+
+COMMENT ON FUNCTION healpix_dwithin(int, bigint, bigint, float8) IS
+   'predicate matching healpixels less than a given distance apart';
+
+CREATE FUNCTION healpix_disc("order" int, center bigint, radius double precision)
+   RETURNS bigint[]
+   AS 'MODULE_PATHNAME', 'healpix_disc'
+   LANGUAGE C
+   IMMUTABLE STRICT PARALLEL SAFE;
+
+CREATE FUNCTION spoint_dwithin_healpix("order" int, p1 spoint, p2 spoint, radius float8)
+   RETURNS boolean
+   LANGUAGE SQL
+   RETURN
+      healpix_dwithin("order", healpix_nest("order", p1), healpix_nest("order", p2), radius) and
+      spoint_dwithin(p1, p2, radius);

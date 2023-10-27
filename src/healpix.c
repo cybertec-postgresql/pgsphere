@@ -20,6 +20,7 @@ PG_FUNCTION_INFO_V1(healpix_nest);
 PG_FUNCTION_INFO_V1(healpix_ring);
 PG_FUNCTION_INFO_V1(inv_healpix_nest);
 PG_FUNCTION_INFO_V1(inv_healpix_ring);
+PG_FUNCTION_INFO_V1(healpix_dwithin);
 
 static int ilog2(hpint64 x)
 {
@@ -206,16 +207,25 @@ Datum healpix_ring(PG_FUNCTION_ARGS)
 	PG_RETURN_INT64(ang2ring(c_nside(order), angle));
 }
 
+void
+inv_healpix_nest_c(int32 order, hpint64 i, SPoint *p)
+{
+	t_ang angle;
+
+	check_index(order, i);
+	angle = nest2ang(c_nside(order), i);
+	p->lat = conv_theta(angle.theta);
+	p->lng = angle.phi;
+}
+
 Datum inv_healpix_nest(PG_FUNCTION_ARGS)
 {
 	int32 order = PG_GETARG_INT32(0);
 	hpint64 i = PG_GETARG_INT64(1);
 	SPoint* p = (SPoint*) palloc(sizeof(SPoint));
-	t_ang angle;
-	check_index(order, i);
-	angle = nest2ang(c_nside(order), i);
-	p->lat = conv_theta(angle.theta);
-	p->lng = angle.phi;
+
+	inv_healpix_nest_c(order, i, p);
+
 	PG_RETURN_POINTER(p);
 }
 
@@ -230,4 +240,36 @@ Datum inv_healpix_ring(PG_FUNCTION_ARGS)
 	p->lat = conv_theta(angle.theta);
 	p->lng = angle.phi;
 	PG_RETURN_POINTER(p);
+}
+
+/*
+ * Check if two healpixels are at most "radius" radians apart.
+ * This function has a support function that enables index lookups.
+ */
+Datum
+healpix_dwithin(PG_FUNCTION_ARGS)
+{
+	int32 order = PG_GETARG_INT32(0);
+	hpint64 h1 = PG_GETARG_INT64(1);
+	hpint64 h2 = PG_GETARG_INT64(2);
+	double radius = PG_GETARG_FLOAT8(3);
+	SPoint p1, p2;
+	t_ang ang1, ang2;
+	double dist;
+
+	/* TODO: this works on pixel centers, add some slack? */
+
+	check_index(order, h1);
+	ang1 = nest2ang(c_nside(order), h1);
+	p1.lat = conv_theta(ang1.theta);
+	p1.lng = ang1.phi;
+
+	check_index(order, h2);
+	ang2 = nest2ang(c_nside(order), h2);
+	p2.lat = conv_theta(ang2.theta);
+	p2.lng = ang2.phi;
+
+	dist = spoint_dist(&p1, &p2);
+
+	PG_RETURN_BOOL(FPle(dist, radius));
 }
