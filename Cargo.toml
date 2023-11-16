@@ -1,0 +1,20 @@
+[package]
+name = "cds-healpix-c"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "*"
+cdshealpix = "*"
+
+[dependencies.safer-ffi]
+version = "*"
+features = [ "proc_macros" ]
+
+[lib]
+name = "cdshealpix_pgsphere"
+path = "rust/lib.rs"
+crate-type = ["staticlib"]
+
+[features]
+generate-headers = ["safer-ffi/headers"]

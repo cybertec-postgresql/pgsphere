@@ -38,6 +38,7 @@ PG_FUNCTION_INFO_V1(smoc_intersection);
 PG_FUNCTION_INFO_V1(smoc_degrade);
 PG_FUNCTION_INFO_V1(smoc_spoint);
 PG_FUNCTION_INFO_V1(smoc_disc);
+PG_FUNCTION_INFO_V1(smoc_disc_rust);
 PG_FUNCTION_INFO_V1(smoc_scircle);
 PG_FUNCTION_INFO_V1(smoc_spoly);
 
@@ -998,6 +999,30 @@ smoc_disc(PG_FUNCTION_ARGS)
 
 	moc_in_context = create_moc_in_context(moc_error_out);
 	moc_disc(moc_in_context, order, lng, lat, radius, moc_error_out);
+
+	moc_size = VARHDRSZ + get_moc_size(moc_in_context, moc_error_out);
+	moc_ret = (Smoc*) palloc0(moc_size);
+	SET_VARSIZE(moc_ret, moc_size);
+
+	create_moc_release_context(moc_in_context, moc_ret, moc_error_out);
+	PG_RETURN_POINTER(moc_ret);
+}
+
+Datum
+smoc_disc_rust(PG_FUNCTION_ARGS)
+{
+	int		order = PG_GETARG_INT32(0);
+	double	lng = PG_GETARG_FLOAT8(1);
+	double	lat = PG_GETARG_FLOAT8(2);
+	double	radius = PG_GETARG_FLOAT8(3);
+	void*	moc_in_context;
+	int32	moc_size;
+	Smoc*	moc_ret;
+
+	check_order(order);
+
+	moc_in_context = create_moc_in_context(moc_error_out);
+	moc_disc_rust(moc_in_context, order, lng, lat, radius, moc_error_out);
 
 	moc_size = VARHDRSZ + get_moc_size(moc_in_context, moc_error_out);
 	moc_ret = (Smoc*) palloc0(moc_size);

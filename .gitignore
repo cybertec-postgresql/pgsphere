@@ -2,6 +2,7 @@
 *.o
 *.so
 /*.sql
+/Cargo.lock
 /doc/html/
 /doc/pg_sphere*.fo
 /doc/pg_sphere-*.html
@@ -13,7 +14,9 @@
 /results/
 regression.out
 regression.diffs
+rust/cone.h
 tags
+/target/
 /tmp_check
 buildpod
 .deps

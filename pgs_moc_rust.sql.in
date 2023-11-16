@@ -1,0 +1,32 @@
+CREATE FUNCTION smoc_disc_rust ("order" int, lng double precision, lat double precision, radius double precision)
+	RETURNS smoc
+	AS 'MODULE_PATHNAME'
+	LANGUAGE C
+	PARALLEL SAFE
+	IMMUTABLE
+	STRICT;
+
+COMMENT ON FUNCTION smoc_disc_rust ("order" int, lng double precision, lat double precision, radius double precision)
+	IS 'constructs smoc of given order from circle parameters';
+
+/*
+CREATE FUNCTION smoc ("order" int, scircle)
+	RETURNS smoc
+	AS 'MODULE_PATHNAME', 'smoc_scircle'
+	LANGUAGE C
+	PARALLEL SAFE
+	IMMUTABLE
+	STRICT;
+
+COMMENT ON FUNCTION smoc ("order" int, scircle) IS 'constructs smoc of given order from scircle';
+
+CREATE FUNCTION smoc ("order" int, spoly)
+	RETURNS smoc
+	AS 'MODULE_PATHNAME', 'smoc_spoly'
+	LANGUAGE C
+	PARALLEL SAFE
+	IMMUTABLE
+	STRICT;
+
+COMMENT ON FUNCTION smoc ("order" int, spoly) IS 'constructs smoc of given order from spoly';
+*/

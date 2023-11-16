@@ -4,6 +4,7 @@ include Makefile.common.mk
 RELEASE_SQL      = $(EXTENSION)--$(PGSPHERE_VERSION).sql
 USE_PGXS         = 1
 USE_HEALPIX     ?= 1
+USE_HEALPIX_RUST ?= 1
 PGINDENT        ?= pgindent
 PGBSDINDENT     ?= pg_bsd_indent
 
@@ -93,11 +94,22 @@ PKG_CONFIG ?= pkg-config
 override CPPFLAGS += $(shell $(PKG_CONFIG) --cflags healpix_cxx)
 SHLIB_LINK += $(shell $(PKG_CONFIG) --libs healpix_cxx)
 LINK.shared = g++ -shared
+
+PGS_SQL += pgs_moc_rust.sql
+SHLIB_LINK += -Ltarget/release -lcdshealpix_pgsphere
 endif
 
 # healpix_bare.c isn't ours so we refrain from fixing the warnings in there
 healpix_bare/healpix_bare.o : healpix_bare/healpix_bare.c
 	$(COMPILE.c) -Wno-declaration-after-statement -o $@ $^
+
+rust/cone.h:
+	cargo test --features generate-headers -- generate_headers
+
+target/release/libcdshealpix_pgsphere.a: rust/lib.rs
+	cargo build --release
+
+EXTRA_CLEAN += rust/cone.h target/
 
 pg_version := $(word 2,$(shell $(PG_CONFIG) --version))
 has_support_functions = $(if $(filter-out 9.% 10.% 11.%,$(pg_version)),y,n)

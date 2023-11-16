@@ -18,6 +18,7 @@
 
 #include "pgs_process_moc.h"
 #include "pgs_util.h"
+#include "rust/cone.h"
 
 #define LAYDEB 0
 
@@ -1005,6 +1006,31 @@ moc_disc(void* moc_in_context, int order, double theta, double phi, double radiu
 		{
 			hpint64 first = pixset.ivbegin(j);
 			hpint64 last = pixset.ivend(j);
+			healpix_convert(first, order); // convert to order 29
+			healpix_convert(last, order);
+			moc_map_entry input(first, last);
+			m.input_map.insert(m.input_map.end(), input);
+		}
+
+		m.order = order;
+	PGS_CATCH
+}
+
+void
+moc_disc_rust(void* moc_in_context, int order, double theta, double phi, double radius,
+												pgs_error_handler error_out)
+{
+	moc_input* p = static_cast<moc_input*>(moc_in_context);
+	moc_input & m = *p;
+	PGS_TRY
+		Vec_uint64_t	pixels;
+
+		pixels = cone_coverage (order, theta, phi, radius);
+
+		for (tsize j = 0; j < pixels.len; j += 2)
+		{
+			hpint64 first = pixels.ptr[j];
+			hpint64 last = pixels.ptr[j+1];
 			healpix_convert(first, order); // convert to order 29
 			healpix_convert(last, order);
 			moc_map_entry input(first, last);
