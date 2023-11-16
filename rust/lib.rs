@@ -3,13 +3,6 @@
 use cdshealpix::nested::cone_coverage_approx;
 use ::safer_ffi::prelude::*;
 
-#[derive_ReprC]
-#[repr(C)]
-pub struct Buffer {
-    data: *mut u64,
-    len: usize,
-}
-
 #[ffi_export]
 fn cone_coverage (depth: u8, cone_lon: f64, cone_lat: f64, cone_radius: f64) -> repr_c::Vec<u64>
 {
